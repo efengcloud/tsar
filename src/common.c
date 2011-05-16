@@ -1,3 +1,11 @@
+/*
+ * (C) 2010-2011 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the Apache License 2.0
+ *
+ */
+
 #include "tsar.h"
 
 int is_digit(char *str)

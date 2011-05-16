@@ -1,4 +1,3 @@
-AUTOMAKE_OPTIONS = foreign
 AM_CPPFLAGS = -I $(top_srcdir)/include
 export AM_CPPFLAGS
 SUBDIRS = src modules devel crontrib conf

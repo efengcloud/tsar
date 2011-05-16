@@ -1,3 +1,10 @@
+/*
+ * (C) 2010-2011 Alibaba Group Holding Limited
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the Apache License 2.0
+ *
+ */
 #ifndef _CONFIG_H
 #define _CONFIG_H
 
