@@ -56,25 +56,29 @@ int get_st_array_from_file()
 		goto out;
 	}
 	memcpy(pre_time, pre_line, s_token - pre_line);	
-	if (!(conf.print_interval = statis.cur_time - atol(pre_time)))
+	if (!(conf.print_interval = statis.cur_time - strtol(pre_time,NULL,0)))
 		goto out;
 
 	/* read pre_line to mod->record and store to pre_array */
 	read_line_to_module_record(pre_line);
 	init_module_fields();
-	collect_record_stat();
+	if(collect_record_stat() == 0)
+		do_debug(LOG_INFO, "collect_record_stat warn\n");
 	/* read cur_line and stats operation */
 	read_line_to_module_record(line);
-	collect_record_stat();
+	if(collect_record_stat() == 0)
+		do_debug(LOG_INFO, "collect_record_stat warn\n");
 	ret = 0;
 
 out:
 	/* store current record to PRE_RECORD_FILE */
 	if ((fp = fopen(PRE_RECORD_FILE, "w"))) {
 		strcat(line,"\n");
-		fputs(line, fp);
+		if(fputs(line, fp) < 0)
+			do_debug(LOG_WARN, "write line error\n");
 		fclose(fp);
-		chmod(PRE_RECORD_FILE, 0666);
+		if(chmod(PRE_RECORD_FILE, 0666) < 0)
+			do_debug(LOG_WARN, "chmod file %s error\n",PRE_RECORD_FILE);
 	}
 	
 	return ret;
@@ -93,7 +97,7 @@ void send_sql_txt(int fd)
 
 	/* get hostname */	
 	if (0 != gethostname(host_name, sizeof(host_name))) {
-		do_debug(LOG_FATAL, "send_sql_txt: gethostname err, errno=%d", errno);
+		do_debug(LOG_FATAL, "send_sql_txt: gethostname err, errno=%d\n", errno);
 	}
 	while (host_name[i]) {
                 if (!isprint(host_name[i++])) {
@@ -157,7 +161,9 @@ void send_sql_txt(int fd)
 		}
 	}
 	do_debug(LOG_DEBUG,"send to db sql:%s\n",sqls);
-	write(fd, sqls, strlen(sqls));
+	if(write(fd, sqls, strlen(sqls)) < strlen(sqls)){
+		do_debug(LOG_WARN, "send to db sql:'%s' error\n", sqls);
+	}
 }
 
 
@@ -174,7 +180,7 @@ struct sockaddr_in *str2sa(char *str)
 
 	if ((c = strrchr(str,':')) != NULL) {
 		*c++ = '\0';
-		port = atol(c);
+		port = strtol(c,NULL,0);
 	}        
 	else     
 		port = 0;
@@ -186,7 +192,7 @@ struct sockaddr_in *str2sa(char *str)
 		struct hostent *he;
 
 		if ((he = gethostbyname(str)) == NULL) {
-			do_debug(LOG_FATAL, "str2sa: Invalid server name, '%s'", str);
+			do_debug(LOG_FATAL, "str2sa: Invalid server name, '%s'\n", str);
 		}
 		else
 			sa.sin_addr = *(struct in_addr *) *(he->h_addr_list);
@@ -209,7 +215,7 @@ void output_db()
 
 	fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (fd < 0) {
-		do_debug(LOG_FATAL, "can't get socket");	
+		do_debug(LOG_FATAL, "can't get socket\n");	
 	}
 
 	/* set socket fd noblock */
@@ -277,7 +283,7 @@ void output_nagios(){
 
 	/* get hostname */	
 	if (0 != gethostname(host_name, sizeof(host_name))) {
-		do_debug(LOG_FATAL, "send to nagios: gethostname err, errno=%d", errno);
+		do_debug(LOG_FATAL, "send to nagios: gethostname err, errno=%d \n", errno);
 	}
 	while (host_name[i]) {
                 if (!isprint(host_name[i++])) {
@@ -384,6 +390,7 @@ void output_nagios(){
 	char nagios_cmd[LEN_1024];
 	sprintf(nagios_cmd,"echo \"%s;tsar;%d;%s|%s\"|%s -H %s -p %d -to 10 -d \";\" -c %s",host_name,result,output_err,output,conf.send_nsca_cmd,conf.server_addr,*(conf.server_port),conf.send_nsca_conf);
 	do_debug(LOG_DEBUG,"send to naigos:%s\n",nagios_cmd);
-	system(nagios_cmd);
+	if(system(nagios_cmd) != 0)
+		do_debug(LOG_WARN,"nsca run error:%s\n",nagios_cmd);;
 	printf("%s\n",nagios_cmd);
 }

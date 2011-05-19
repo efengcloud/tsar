@@ -36,7 +36,7 @@ void parse_int(int *var)
 	char	*token = strtok(NULL, W_SPACE);
 	if (token == NULL)
 		do_debug(LOG_FATAL, "Bungled line");
-	*var = atoi(token);
+	*var = strtol(token,NULL,0);
 }
 
 
@@ -172,6 +172,8 @@ void get_include_conf()
 	if(token){
 		memset(cmd, '\0', LEN_1024);
 		sprintf(cmd,"ls %s 2>/dev/null",token);
+		if(strchr(cmd,';') != NULL || strchr(cmd,'|') != NULL || strchr(cmd,'&') != NULL)
+			do_debug(LOG_ERR,"include formart Error:%s\n",cmd);
 		stream = popen(cmd, "r");
 		if(stream == NULL){
 			do_debug(LOG_ERR,"popen failed. Error:%s\n",strerror(errno));
@@ -212,7 +214,8 @@ void get_include_conf()
         		}   				
 			fclose(fp);
 		}
-		pclose(stream);
+		if(pclose(stream) !=0)
+			do_debug(LOG_WARN,"pclose error\n");
 	}
 }
 //deal with the nagios config file

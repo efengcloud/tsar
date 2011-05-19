@@ -71,7 +71,7 @@ static void set_tcp_record(struct module *mod, double st_array[],
 {
 	int i;
 	for (i = 0; i < 4; i++) {
-		if(cur_array[i] >= pre_array[i])
+		if((cur_array[i] >= pre_array[i]) && (inter > 0))
 			st_array[i] = (cur_array[i] - pre_array[i]) * 1.0 / inter;
 	//	else
 	//		st_array[i] = 0;

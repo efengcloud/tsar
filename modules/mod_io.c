@@ -292,6 +292,9 @@ static void set_io_record(struct module *mod, double st_array[],
 	double n_ios = rd_ios + wr_ios;
 	double n_ticks = rd_ticks + wr_ticks;
 	double n_kbytes = (rd_sectors + wr_sectors) / 2;
+	if((inter == 0) || (n_ios ==0)){
+		return;
+	}
 	st_array[0] = rd_merges / (inter * 1.0);
 	st_array[1] = wr_merges / (inter * 1.0);
 	st_array[2] = rd_ios / (inter * 1.0);

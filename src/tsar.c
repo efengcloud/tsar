@@ -66,7 +66,7 @@ static void main_init(int argc, char **argv)
 				conf.running_mode = RUN_CRON;
 				break;
 			case 'i':
-				conf.print_interval = atoi(optarg);
+				conf.print_interval = strtol(optarg,NULL,0);
 				oind++;
 				break;
 			case 'L':
@@ -76,7 +76,7 @@ static void main_init(int argc, char **argv)
 				conf.running_mode = RUN_PRINT_LIVE;
 				break;
 			case 'n':
-				conf.print_ndays = atoi(optarg);
+				conf.print_ndays = strtol(optarg,NULL,0);
 				oind++;
 				break;
 			case 'm':

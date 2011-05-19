@@ -46,7 +46,7 @@ struct stats_partition {
 /* } */
 
 
-int __read_partition_stat(char *fsname, struct stats_partition *sp)
+void __read_partition_stat(char *fsname, struct stats_partition *sp)
 {
 	struct statfs fsbuf;
 	if (!statfs(fsname, &fsbuf)) {
@@ -57,7 +57,6 @@ int __read_partition_stat(char *fsname, struct stats_partition *sp)
 		sp->itotal = fsbuf.f_files;
 		sp->ifree = fsbuf.f_ffree;
 	}
-	return 0;
 }
 
 int store_single_partition(char *buf, char *mntpath,
@@ -116,7 +115,8 @@ void read_partition_stat(struct module *mod)
 			/* move the pointer to the next structure */
 		}
 	}
-	endmntent(mntfile);
+	if(endmntent(mntfile) != 1)
+		return;
 	buf[pos] = '\0';
 	set_mod_record(mod, buf);
 	return;

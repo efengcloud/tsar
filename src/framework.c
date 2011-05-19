@@ -335,8 +335,12 @@ void free_modules()
 
 	for (i = 0; i < statis.total_mod_num; i++) {
 		mod = &mods[i];
-		if (mod->lib)
-			dlclose(mod->lib);
+		if (mod->lib){
+			if(dlclose(mod->lib) != 0 )
+				do_debug(LOG_WARN,"free_modules:close mod %s error\n",mod->name);
+			else
+				do_debug(LOG_WARN,"free_modules:close mod %s ok\n",mod->name);
+		}
 
 		if (mod->cur_array) {
 			free(mod->cur_array);

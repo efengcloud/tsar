@@ -52,7 +52,7 @@ void print_header()
 		if (!mod->enable)	
 			continue;
 
-		memset(n_opt, 0, sizeof(opt));
+		memset(n_opt, 0, sizeof(n_opt));
 		memset(mod_hdr, 0, sizeof(mod_hdr));
 		get_mod_hdr(mod_hdr, mod);
 
@@ -194,7 +194,8 @@ void running_print_live()
 	init_module_fields();
 
 	/* skip first record */
-	collect_record_stat();
+	if(collect_record_stat() == 0)
+		do_debug(LOG_INFO, "collect_record_stat warn\n");
 	sleep(conf.print_interval);
 
 	/* print live record */
@@ -241,7 +242,9 @@ void find_offset_from_start(FILE *fp,int number)
 	file_len = fend - fset;
 
 	memset(&line, 0, LEN_4096);		
-	fgets(line, LEN_4096, fp);
+	if(!fgets(line, LEN_4096, fp)){
+		do_debug(LOG_FATAL, "get line error\n");
+	}
 	line_len = strlen(line);
 
 	/* get time token */
@@ -258,14 +261,18 @@ void find_offset_from_start(FILE *fp,int number)
 		offset = (off_start + off_end)/2;
 		memset(&line, 0, LEN_4096);		
 		fseek(fp, offset, SEEK_SET);
-		fgets(line, LEN_4096, fp);
+		if(!fgets(line, LEN_4096, fp)){
+			do_debug(LOG_FATAL, "get line error\n");
+		}
 		memset(&line, 0, LEN_4096);		
-		fgets(line, LEN_4096, fp);
+		if(!fgets(line, LEN_4096, fp)){
+			do_debug(LOG_FATAL, "get line error\n");
+		}
 		if (0 != line[0] && offset > line_len) {
 			p_sec_token = strstr(line, SECTION_SPLIT);
 			if (p_sec_token) {
 				*p_sec_token = '\0';
-				t_get = atol(line);
+				t_get = strtol(line,NULL,0);
 				if (abs(t_get - t_token) <= 60) {
 					conf.print_file_number = number;
 					break;
@@ -305,7 +312,7 @@ long set_record_time(char *line)
 
 	/* swap time */
 	pre_time = c_time;
-	c_time = atol(s_time);
+	c_time = strtol(s_time,NULL,0);
 
 	c_time = c_time - c_time%60;
 	pre_time = pre_time - pre_time%60;
@@ -327,7 +334,7 @@ int check_time(char *line)
 	/* get record time */
 	token = strstr(line, SECTION_SPLIT);
 	memcpy(s_time, line, token - line);
-	now_time = atol(s_time);
+	now_time = strtol(s_time,NULL,0);
 
 	/* if time is divide by conf.print_nline_interval*/ 
 	now_time = now_time - now_time % 60;
@@ -471,7 +478,8 @@ FILE *init_running_print()
 	/* set struct module fields */	
 	init_module_fields();
 
-	set_record_time(line);
+	if(set_record_time(line) == 0)
+		do_debug(LOG_WARN, "line have same time.%s\n",line);
 	return fp;
 }
 
@@ -490,8 +498,8 @@ void running_print()
 	fp = init_running_print();
 
 	/* skip first record */
-	collect_record_stat();
-
+	if(collect_record_stat() ==0)
+		do_debug(LOG_INFO, "collect_record_stat warn\n");
 	while (1) {
 		if(!fgets(line, LEN_4096, fp)){
 			if(conf.print_file_number <= 0)
