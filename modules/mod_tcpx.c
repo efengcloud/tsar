@@ -38,10 +38,13 @@ static void read_stat_tcpx(struct module *mod)
 	
 	fp_snmp = fopen(NET_SNMP, "r");
 	if(fp_snmp == NULL){
+		fclose(fp_tcp);
 		return;
 	}
 	fp_netstat = fopen(NETSTAT, "r");
 	if(fp_netstat == NULL){
+		fclose(fp_tcp);
+		fclose(fp_snmp);
 		return;
 	}	
 	st_tcpx.tcplistenq = 0;

@@ -93,6 +93,8 @@ static void main_init(int argc, char **argv)
 					strcat(conf.output_print_mod, DATA_SPLIT);
 				} else
 					usage();
+			default:
+				break;
 		}
 	}
 

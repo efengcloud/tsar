@@ -214,7 +214,7 @@ void get_include_conf()
         		}   				
 			fclose(fp);
 		}
-		if(pclose(stream) !=0)
+		if(pclose(stream) == -1)
 			do_debug(LOG_WARN,"pclose error\n");
 	}
 }
