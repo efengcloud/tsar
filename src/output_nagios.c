@@ -303,7 +303,7 @@ void output_nagios(){
 	reload_modules(conf.output_nagios_mod);
 
 	sprintf(s_time, "%ld", time(NULL));
-	
+
 	/* print summary data */
 	for (i = 0; i < statis.total_mod_num; i++) {
 		mod = &mods[i];
@@ -314,7 +314,7 @@ void output_nagios(){
 			printf("do nothing\n");
 		}else {
 			char opt[LEN_32];
-			char check[LEN_32];
+			char check[LEN_64];
 			char *n_record = strdup(mod->record);
 			char *token = strtok(n_record, ITEM_SPLIT);
 			char *s_token;
@@ -339,10 +339,10 @@ void output_nagios(){
 				token = strtok(NULL, ITEM_SPLIT);
 				j++;
 				for (k = 0; k < mod->n_col; k++) {
-					char check_item[LEN_32];
+					char check_item[LEN_64];
 					char *p;
-					memset(check_item,0,LEN_32);
-					memcpy(check_item,check,LEN_32);
+					memset(check_item,0,LEN_64);
+					memcpy(check_item,check,LEN_64);
 					p = info[k].hdr;
 					while(*p == ' ')
 						p++;
