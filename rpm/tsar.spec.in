@@ -4,7 +4,7 @@ Release: _RELEASE_
 Summary: Taobao System Activity Reporter
 URL: http://code.taobao.org/svn/tsar/trunk
 Group: Taobao/Common
-License: Commercial
+License: Apache License, Version 2.0
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Source: tsar-%{version}.tar.gz
 #Requires: t-nsca-send
