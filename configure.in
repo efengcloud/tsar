@@ -22,7 +22,7 @@ AC_CHECK_LIB([dl], [main])
 # Checks for library functions.
 
 AC_OUTPUT([Makefile
-		modules/Makefile
+		src/modules/Makefile
 		devel/Makefile
 		conf/Makefile
 		crontrib/Makefile

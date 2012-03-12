@@ -1,4 +1,5 @@
 AUTOMAKE_OPTIONS = foreign
+SUBDIRS = modules
 INCLUDES=-I ../include
 LDFLAGS+=-rdynamic
 bindir=/usr/bin
