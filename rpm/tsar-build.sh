@@ -95,6 +95,7 @@ sed -e "s/_VERSION_/$version/g" -e "s/_RELEASE_/$release/g"  -e "s/SVN_REVISION/
 rpmbuild --ba $TOP_DIR/SPECS/$name.spec
 
 find $TOP_DIR/RPMS -name "*.rpm"  -exec mv {} ./rpm \;
+mv $TOP_DIR/SRPMS/* ./rpm
 
 rm -rf $TOP_DIR $RPM_MACROS
 if [ -e $RPM_MACROS.bak ]; then

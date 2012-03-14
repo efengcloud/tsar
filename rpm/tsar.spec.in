@@ -46,7 +46,7 @@ make install DESTDIR=%{buildroot}
 /etc/cron.d/tsar.cron
 /etc/tsar/conf.d
 /etc/logrotate.d/tsar.logrotate
-/usr/local/man/man8/*
+/usr/local/share/man/man8/*
 
 %attr(755,root,root) %dir /usr/bin/tsar
 
