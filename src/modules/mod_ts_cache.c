@@ -7,15 +7,9 @@
  * Structure for TS information
  */
 struct stats_ts_cache {
-        //ts cache
-        unsigned long long total_hit;
-        unsigned long long total_miss;
-        unsigned long long ssd_hit;
-        unsigned long long ram_hit;
-        unsigned long long sas_hit;
-        unsigned long long user_resp;
-        unsigned long long os_resp;
-        unsigned long long total_band;
+        int hit;
+        int ram_hit;
+        int band;
 };
 //return value type
 const static short int TS_REC_INT = 0;
@@ -28,14 +22,9 @@ const static short int TS_RECORD_GET = 3;
 const static int LINE_1024 = 1024;
 const static int LINE_4096 = 4096;
 const static char *RECORDS_NAME[]= {
-        //ts cache
-        "proxy.process.cache.read.success",
-        "proxy.process.cache.read.failure",
-        "proxy.process.cache.ssd.read.success",
-        "proxy.process.cache.ram.read.success",
-        "proxy.process.cache.sas.read.success",
-        "proxy.node.http.user_agent_total_response_bytes",
-        "proxy.node.http.origin_server_total_response_bytes"
+        "proxy.node.cache_hit_ratio_avg_10s",
+        "proxy.node.cache_hit_mem_ratio_avg_10s",
+        "proxy.node.bandwidth_hit_ratio_avg_10s"
 };
 //socket patch
 const static char *sock_path = "/var/run/trafficserver/mgmtapisocket";
@@ -45,35 +34,9 @@ static char *ts_cache_usage = "    --ts_cache          trafficserver cache stati
 
 static struct mod_info ts_cache_info[] = {
   {"   hit", DETAIL_BIT, 0, STATS_NULL},
-  {"  miss", DETAIL_BIT, 0, STATS_NULL},
-  {"   ssd", DETAIL_BIT, 0, STATS_NULL},
-  {"   ram", DETAIL_BIT, 0, STATS_NULL},
-  {"   sas", DETAIL_BIT, 0, STATS_NULL},
-  {"  ur_b", HIDE_BIT, 0, STATS_NULL},
-  {"  or_b", HIDE_BIT, 0, STATS_NULL},
+  {"ramhit", DETAIL_BIT, 0, STATS_NULL},
   {"  band", DETAIL_BIT, 0, STATS_NULL}
 };
-
-void set_ts_cache_record(struct module *mod, double st_array[],
-                             U_64 pre_array[], U_64 cur_array[], int inter)
-{
-  int i = 0;
-  for (i = 0; i < 8; ++i) {
-    st_array[i] = 0;
-  }
-  if ((cur_array[0] + cur_array[1]) > (pre_array[0] + pre_array[1])) {
-    for (i = 0; i < 5; ++i) {
-      if (cur_array[i] >= pre_array[i]) {
-        st_array[i] = (cur_array[i] - pre_array[i]) * 100.0 / (cur_array[0] + cur_array[1] - pre_array[0] - pre_array[1]);
-      }
-    }
-  }
-  if (cur_array[5] > pre_array[5] && cur_array[6] >= pre_array[6] && (cur_array[5] - pre_array[5]) >= (cur_array[6] - pre_array[6])) {
-    st_array[5] = cur_array[5] - pre_array[5];
-    st_array[6] = cur_array[6] - pre_array[6];
-    st_array[7] = 100.0 * (1 - st_array[6] * 1.0 / st_array[5]);
-  }
-}
 
 void read_ts_cache_stats(struct module *mod)
 {
@@ -109,7 +72,6 @@ void read_ts_cache_stats(struct module *mod)
     short int ret_status;
     long int ret_info_len;
     short int ret_type;
-    long ret_val;
     int read_len = read(fd, buf, LINE_1024);
     if (read_len != -1) {
       ret_status = *((short int *)&buf[0]);
@@ -117,36 +79,36 @@ void read_ts_cache_stats(struct module *mod)
       ret_type = *((short int *)&buf[6]);
     }
     if (0 == ret_status) {
-      if (ret_type < 2) {
-	ret_val= *((long int *)&buf[8]);
-      } else if (2 == ret_type) {
 	float ret_val_float = *((float *)&buf[8]);
-        ret_val_float *= 100;
-        ret_val = (unsigned long long)ret_val_float;
-      } else {
-        goto done;
-      }
+        ((int *)&st_ts)[i] = (int)ret_val_float * 1000;
     }
-    ((unsigned long long *)&st_ts)[i] = ret_val;
   }
 done:
   if (-1 != fd)
     close(fd);
-  pos = sprintf(buf, "%lld,%lld,%lld,%lld,%lld,%lld,%lld,%lld",
-                st_ts.total_hit,
-                st_ts.total_miss,
-                st_ts.ssd_hit,
+  pos = sprintf(buf, "%d,%d,%d",
+                st_ts.hit,
                 st_ts.ram_hit,
-                st_ts.sas_hit,
-                st_ts.user_resp,
-                st_ts.os_resp,
-                st_ts.total_band
+                st_ts.band
                 );
   buf[pos] = '\0';
   set_mod_record(mod, buf);
 }
 
+
+void set_ts_cache_record(struct module *mod, double st_array[],
+                             U_64 pre_array[], U_64 cur_array[], int inter)
+{
+  int i = 0;
+  for (i = 0; i < 3; ++i) {
+    st_array[i] = cur_array[i]/10;
+  }
+}
+
+
+
 void mod_register(struct module *mod)
 {
-  register_mod_fileds(mod, "--ts_cache", ts_cache_usage, ts_cache_info, 8, read_ts_cache_stats, set_ts_cache_record);
+  register_mod_fileds(mod, "--ts_cache", ts_cache_usage, ts_cache_info, 3, read_ts_cache_stats, set_ts_cache_record);
+
 }
