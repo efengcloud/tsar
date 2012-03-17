@@ -16,6 +16,7 @@ AC_PROG_INSTALL
 AC_CHECK_LIB([dl], [main])
 
 # Checks for header files.
+AC_CONFIG_FILES([include/define.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 
