@@ -34,7 +34,8 @@ POST_UNINSTALL = :
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	$(top_srcdir)/include/define.h.in AUTHORS COPYING ChangeLog \
+	$(top_srcdir)/include/define.h.in \
+	$(top_srcdir)/rpm/tsar.spec.in AUTHORS COPYING ChangeLog \
 	INSTALL NEWS config.guess config.sub depcomp install-sh \
 	ltmain.sh missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -44,7 +45,7 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_CLEAN_FILES = include/define.h
+CONFIG_CLEAN_FILES = include/define.h rpm/tsar.spec
 CONFIG_CLEAN_VPATH_FILES =
 SOURCES =
 DIST_SOURCES =
@@ -231,6 +232,8 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
 include/define.h: $(top_builddir)/config.status $(top_srcdir)/include/define.h.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+rpm/tsar.spec: $(top_builddir)/config.status $(top_srcdir)/rpm/tsar.spec.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 
 # This directory's subdirectories are mostly independent; you can cd

@@ -1,6 +1,6 @@
 Name: tsar
-Version: _VERSION_
-Release: _RELEASE_
+Version: @VERSION@
+Release: 0
 Summary: Taobao System Activity Reporter
 URL: http://code.taobao.org/svn/tsar/trunk
 Group: Taobao/Common
@@ -25,7 +25,7 @@ devel package include tsar header files and module template for the development
 %setup -q
 
 %build
-./configure;make clean;make
+./configure --prefix=/usr --libdir=%{_libdir}/tsar;make
 
 %install
 
@@ -42,20 +42,20 @@ make install DESTDIR=%{buildroot}
 %defattr(-,root,root)
 %config(noreplace) /etc/tsar/tsar.conf
 %config(noreplace) /etc/tsar/nagios.conf
-/usr/local/tsar/modules/*.so
+%{_libdir}/tsar/*.so
 /etc/cron.d/tsar.cron
 /etc/tsar/conf.d
 /etc/logrotate.d/tsar.logrotate
-/usr/local/share/man/man8/*
+/usr/share/man/man8/*
 
 %attr(755,root,root) %dir /usr/bin/tsar
 
 %files devel
 %defattr(-,root,root)
-/usr/local/tsar/devel/tsar.h
-/usr/local/tsar/devel/Makefile.test
-/usr/local/tsar/devel/mod_test.c
-/usr/local/tsar/devel/mod_test.conf
+/usr/share/doc/tsar/tsar.h
+/usr/share/doc/tsar/Makefile.test
+/usr/share/doc/tsar/mod_test.c
+/usr/share/doc/tsar/mod_test.conf
 %attr(755,root,root) %dir /usr/bin/tsardevel
 
 %changelog
