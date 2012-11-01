@@ -6,7 +6,7 @@ URL: http://code.taobao.org/svn/tsar/trunk
 Group: Taobao/Common
 License: Apache License, Version 2.0
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Source: tsar-%{version}.tar.gz
+Source: tsar-%{version}.tar.bz2
 #Requires: t-nsca-send
 
 %description
@@ -25,6 +25,7 @@ devel package include tsar header files and module template for the development
 %setup -q
 
 %build
+autoreconf -i
 ./configure --prefix=/usr --libdir=%{_libdir}/tsar;make
 
 %install
