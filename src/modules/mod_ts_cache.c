@@ -7,9 +7,9 @@
  * Structure for TS information
  */
 struct stats_ts_cache {
-        int hit;
-        int ram_hit;
-        int band;
+  unsigned long long hit;
+  unsigned long long ram_hit;
+  unsigned long long band;
 };
 //return value type
 const static short int TS_REC_INT = 0;
@@ -69,24 +69,32 @@ void read_ts_cache_stats(struct module *mod)
     strcpy(write_buf+6, info);
     write(fd, write_buf, 2+4+strlen(info));
 
-    short int ret_status;
-    long int ret_info_len;
-    short int ret_type;
+    short int ret_status = 0;
+    short int ret_type = 0;
+    long ret_val = 0;
     int read_len = read(fd, buf, LINE_1024);
     if (read_len != -1) {
       ret_status = *((short int *)&buf[0]);
-      ret_info_len = *((long int *)&buf[2]);
       ret_type = *((short int *)&buf[6]);
     }
     if (0 == ret_status) {
-	float ret_val_float = *((float *)&buf[8]);
-        ((int *)&st_ts)[i] = (int)ret_val_float * 1000;
+      if (ret_type < 2) {
+        ret_val= *((long int *)&buf[8]);
+      } else if (2 == ret_type) {
+        float ret_val_float = *((float *)&buf[8]);
+        ret_val_float *= 100*10;
+        ret_val = (unsigned long long)ret_val_float;
+        //printf("return=%d\n", ret_val);
+      } else {
+        goto done;
+      }
     }
+    ((unsigned long long *)&st_ts)[i] = ret_val;
   }
 done:
   if (-1 != fd)
     close(fd);
-  pos = sprintf(buf, "%d,%d,%d",
+  pos = sprintf(buf, "%lld,%lld,%lld",
                 st_ts.hit,
                 st_ts.ram_hit,
                 st_ts.band
@@ -101,7 +109,7 @@ void set_ts_cache_record(struct module *mod, double st_array[],
 {
   int i = 0;
   for (i = 0; i < 3; ++i) {
-    st_array[i] = cur_array[i]/10;
+    st_array[i] = cur_array[i]/10.0;
   }
 }
 
