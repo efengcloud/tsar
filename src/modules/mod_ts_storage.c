@@ -13,10 +13,10 @@ struct stats_ts_storage {
   unsigned long long avg_obj_size;
 };
 //return value type
-const static short int TS_REC_INT = 0;
-const static short int TS_REC_COUNTER = 0;
-const static short int TS_REC_FLOAT = 2;
-const static short int TS_REC_STRING = 3;
+//const static short int TS_REC_INT = 0;
+//const static short int TS_REC_COUNTER = 0;
+//const static short int TS_REC_FLOAT = 2;
+//const static short int TS_REC_STRING = 3;
 //command type
 const static short int TS_RECORD_GET = 3;
 //records
@@ -85,14 +85,12 @@ void read_ts_storage_stats(struct module *mod)
     strcpy(write_buf+6, info);
     write(fd, write_buf, 2+4+strlen(info));
 
-    short int ret_status;
-    long int ret_info_len;
-    short int ret_type;
-    long ret_val;
+    short int ret_status = 0;
+    short int ret_type = 0;
+    long ret_val = 0;
     int read_len = read(fd, buf, LINE_1024);
     if (read_len != -1) {
       ret_status = *((short int *)&buf[0]);
-      ret_info_len = *((long int *)&buf[2]);
       ret_type = *((short int *)&buf[6]);
     }
     if (0 == ret_status) {

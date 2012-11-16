@@ -12,10 +12,10 @@ struct stats_ts_cache {
   unsigned long long band;
 };
 //return value type
-const static short int TS_REC_INT = 0;
-const static short int TS_REC_COUNTER = 0;
-const static short int TS_REC_FLOAT = 2;
-const static short int TS_REC_STRING = 3;
+//const static short int TS_REC_INT = 0;
+//const static short int TS_REC_COUNTER = 0;
+//const static short int TS_REC_FLOAT = 2;
+//const static short int TS_REC_STRING = 3;
 //command type
 const static short int TS_RECORD_GET = 3;
 //records
@@ -84,7 +84,6 @@ void read_ts_cache_stats(struct module *mod)
         float ret_val_float = *((float *)&buf[8]);
         ret_val_float *= 100*10;
         ret_val = (unsigned long long)ret_val_float;
-        //printf("return=%d\n", ret_val);
       } else {
         goto done;
       }
