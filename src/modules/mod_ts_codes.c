@@ -50,7 +50,7 @@ struct stats_ts_codes {
   unsigned long long code504;
 };
 
-static char *ts_codes_usage = "    --ts_codes          trafficserver connection statistics";
+static char *ts_codes_usage = "    --ts_codes          trafficserver statistics on http response codes";
 
 static struct mod_info ts_code_info[] = {
   {"   200", DETAIL_BIT, 0, STATS_NULL},
