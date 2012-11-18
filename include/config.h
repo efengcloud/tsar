@@ -42,6 +42,10 @@ struct configure
 	int	print_mode;		/* data type will print: summary or detail */
 	int	print_merge;		/* mult items is merge */
 	int	print_ndays;		 /* how many line will print every time. default:10 */
+	int     print_day;               /* which day will print*/
+	int     print_start_time;       /* the start of the print time*/
+	int     print_end_time;          /* the end of the print time*/
+
 	int	print_tail;
 	int	print_file_number;	/* which tsar.data file used*/
 	

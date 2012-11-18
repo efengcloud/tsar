@@ -36,7 +36,7 @@ int is_digit(char *str)
 int convert_record_to_array(U_64 *array, int l_array, char *record)
 {
 	char *token;
-	char n_str[LEN_1024] = {0};
+	char n_str[LEN_4096] = {0};
 	int i = 0;
 
 	if (!record || !strlen(record))
@@ -124,7 +124,7 @@ int merge_mult_item_to_array(U_64 *array, struct module *mod)
 int get_strtok_num(char *str, char *split)
 {
 	int num = 0;
-	char *token, n_str[LEN_1024] = {0};
+	char *token, n_str[LEN_4096] = {0};
 
 	if (!str || !strlen(str))
 		return 0;

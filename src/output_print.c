@@ -44,24 +44,24 @@ void adjust_print_opt_line(char *n_opt_line, char *opt_line, int hdr_len)
 void print_header()
 {
 	struct module *mod = NULL;
-	char header[LEN_4096] = {0};
-	char opt_line[LEN_1024] = {0};
-	char hdr_line[LEN_1024] = {0};
+	char header[LEN_10240] = {0};
+	char opt_line[LEN_10240] = {0};
+	char hdr_line[LEN_10240] = {0};
 	char opt[LEN_128] = {0};
 	char n_opt[LEN_256] = {0};
 	char mod_hdr[LEN_256] = {0};
 	char *token, *s_token, *n_record;
 	int i;
 
-	sprintf(opt_line, "Time       %s", PRINT_SEC_SPLIT);
-	sprintf(hdr_line, "Time       %s", PRINT_SEC_SPLIT);
+	sprintf(opt_line, "Time          %s", PRINT_SEC_SPLIT);
+	sprintf(hdr_line, "Time          %s", PRINT_SEC_SPLIT);
 
 	for (i = 0; i < statis.total_mod_num; i++) {
 		mod = &mods[i];
 		if (!mod->enable)	
 			continue;
 
-		memset(n_opt, 0, sizeof(n_opt));
+		memset(n_opt, 0, sizeof(opt));
 		memset(mod_hdr, 0, sizeof(mod_hdr));
 		get_mod_hdr(mod_hdr, mod);
 
@@ -109,7 +109,7 @@ void print_header()
 void printf_result(double result)
 {
 	if ((1000 - result) > 0.1)
-		printf("%6.1f", result);
+		printf("%6.2f", result);
 	else if ( (1000 - result/1024) > 0.1) {
 		printf("%5.1f%s", result/1024, "K");
 	} else if ((1000 - result/1024/1024) > 0.1) {
@@ -154,7 +154,7 @@ void print_current_time()
 
 	time(&timep);
 	t = localtime(&timep);
-	strftime(cur_time, sizeof(cur_time), "%d/%m-%R", t);
+	strftime(cur_time, sizeof(cur_time), "%d/%m/%y-%R", t);
 	printf("%s%s", cur_time, PRINT_SEC_SPLIT);
 }
 
@@ -203,8 +203,7 @@ void running_print_live()
 	init_module_fields();
 
 	/* skip first record */
-	if(collect_record_stat() == 0)
-		do_debug(LOG_INFO, "collect_record_stat warn\n");
+	collect_record_stat();
 	sleep(conf.print_interval);
 
 	/* print live record */
@@ -235,13 +234,23 @@ void running_print_live()
 
 
 
-/* find where start printting */
-void find_offset_from_start(FILE *fp,int number)
+/* find where start printting
+返回值：
+0 查找成功
+1 需要再往上一个文件查询
+2 查找失败，发生在对tsar.data.x查找时，要找的时间比该文件的最晚时间还晚，此时说明查找落在了轮转期的数据丢失部分，不应再继续查找，
+3 查找失败，发生在对tsar.data查找时，说明tsar已经有一段时间没有运行，从要查找的时间点到现在都没有数据，不应再继续查找
+4 查找失败，发生的场景是，tsar中间有段时间没有采集数据，而要查找的时间点正好又落在这个区间，不应再继续查找
+5 查找过程中碰到日志格式错误
+6 未知错误*/
+int find_offset_from_start(FILE *fp,int number)
 {
-	char	line[LEN_4096] = {0};
+	char	line[LEN_10240] = {0};
 	long	fset, fend, file_len, off_start, off_end, offset, line_len;
 	char	*p_sec_token;
 	time_t	now, t_token, t_get;
+	struct tm stm;
+	memset(&stm, 0, sizeof(struct tm));
 
 	/* get file len */
 	fseek(fp, 0, SEEK_END);
@@ -250,41 +259,47 @@ void find_offset_from_start(FILE *fp,int number)
 	fset = ftell(fp);
 	file_len = fend - fset;
 
-	memset(&line, 0, LEN_4096);		
-	if(!fgets(line, LEN_4096, fp)){
-		do_debug(LOG_FATAL, "get line error\n");
-	}
+	memset(&line, 0, LEN_10240);
+	fgets(line, LEN_10240, fp);
 	line_len = strlen(line);
 
 	/* get time token */
 	time(&now);
-	/* set max days for print 6 months*/
-	if(conf.print_ndays > 180)
-		conf.print_ndays = 180;
-	now = now - now % (60 * conf.print_nline_interval);
-	t_token = now - conf.print_ndays * (24 * 60 * 60);
+	if(conf.print_day > 0){
+	       /*get specify date by --date/-d*/
+	       char timestring[LEN_1024] = {0};
+	       sprintf(timestring, "%d", conf.print_day);
+	       strptime(timestring, "%Y%m%d", &stm);
+              t_token = mktime(&stm);
+		conf.print_start_time = t_token - (t_token % (24 * 60 * 60)) - (8 * 60 * 60);
+		conf.print_end_time = t_token + 24 * 60 * 60 + (60 * conf.print_nline_interval);
+	}else {
+		/* set max days for print 6 months*/
+		if(conf.print_ndays > 180)
+			conf.print_ndays = 180;
+		now = now - now % (60 * conf.print_nline_interval);
+		t_token = now - conf.print_ndays * (24 * 60 * 60) - (60 * conf.print_nline_interval);
+		conf.print_start_time = t_token;
+		conf.print_end_time = now + (60 * conf.print_nline_interval);
+	}
 
 	offset = off_start = 0;
 	off_end = file_len;
 	while (1) {
 		offset = (off_start + off_end)/2;
-		memset(&line, 0, LEN_4096);		
+		memset(&line, 0, LEN_10240);
 		fseek(fp, offset, SEEK_SET);
-		if(!fgets(line, LEN_4096, fp)){
-			do_debug(LOG_FATAL, "get line error\n");
-		}
-		memset(&line, 0, LEN_4096);		
-		if(!fgets(line, LEN_4096, fp)){
-			do_debug(LOG_FATAL, "get line error\n");
-		}
+		fgets(line, LEN_10240, fp);
+		memset(&line, 0, LEN_10240);
+		fgets(line, LEN_10240, fp);
 		if (0 != line[0] && offset > line_len) {
 			p_sec_token = strstr(line, SECTION_SPLIT);
 			if (p_sec_token) {
 				*p_sec_token = '\0';
-				t_get = strtol(line,NULL,0);
+				t_get = atol(line);
 				if (abs(t_get - t_token) <= 60) {
 					conf.print_file_number = number;
-					break;
+					return 0;
 				}
 
 				/* Binary Search */
@@ -293,22 +308,47 @@ void find_offset_from_start(FILE *fp,int number)
 				}
 				else if (t_get < t_token) {
 					off_start = offset;
-				}	
+				}
 			}
 			else {
-				break;
+				//fatal error,log format error happen.
+				return 5;
 			}
 		}
-		else
-			break;
-		if (offset == (off_start + off_end)/2)
-			break;
+		else {
+			if(off_end == file_len){
+				if(number>0){
+					conf.print_file_number = number-1;
+					//at the end of tsar.data.%d have some data lost during data rotate. stat from previous log file";
+					return 2;
+				} else{
+					//researching tsar.data to end and not find log data you need.";
+					return 3;
+				}
+			}
+			if(off_start == 0){
+				conf.print_file_number = number;
+				//need to research tsar.data.number+1;
+				return 1;
+			}
+			//here should not be arrived.
+			return 6;
+		}
+
+		if (offset == (off_start + off_end)/2){
+			if(off_start != 0){
+				//tsar has been down for a while,so,the following time's stat we can provied only;
+				conf.print_file_number = number;
+				return 4;
+			}
+			return 6;
+		}
 	}
 }
 
 
-/* 
- * set and print record time 
+/*
+ * set and print record time
  */
 long set_record_time(char *line)
 {
@@ -321,7 +361,7 @@ long set_record_time(char *line)
 
 	/* swap time */
 	pre_time = c_time;
-	c_time = strtol(s_time,NULL,0);
+	c_time = atol(s_time);
 
 	c_time = c_time - c_time%60;
 	pre_time = pre_time - pre_time%60;
@@ -339,16 +379,27 @@ int check_time(char *line)
 {
 	char *token, s_time[LEN_32] = {0};
 	long now_time = 0;
+	static long pre_time;
 
 	/* get record time */
 	token = strstr(line, SECTION_SPLIT);
 	memcpy(s_time, line, token - line);
-	now_time = strtol(s_time,NULL,0);
+	now_time = atol(s_time);
 
-	/* if time is divide by conf.print_nline_interval*/ 
+	/* check if time is over print_end_time */
+	if(now_time >= conf.print_end_time)
+		return 3;
+	/* if time is divide by conf.print_nline_interval*/
 	now_time = now_time - now_time % 60;
-	if (!(now_time % ( 60 * conf.print_nline_interval)))
-		return 0;
+	if (!((now_time - conf.print_start_time) % ( 60 * conf.print_nline_interval)) && now_time > pre_time){
+		/* check  now and last record time interval */
+		if(pre_time && now_time - pre_time == ( 60 * conf.print_nline_interval)){
+			pre_time = now_time;
+			return 0;
+		}
+		pre_time = now_time;
+		return 1;
+	}
 	else
 		return 1;
 }
@@ -359,7 +410,7 @@ void print_record_time(long c_time)
 	struct tm *t;
 
 	t = localtime(&c_time);
-	strftime(s_time, sizeof(s_time), "%d/%m-%R", t);
+	strftime(s_time, sizeof(s_time), "%d/%m/%y-%R", t);
 	printf("%s%s", s_time, PRINT_SEC_SPLIT);
 }
 
@@ -372,13 +423,13 @@ void print_tail(int tail_type)
 
 	switch (tail_type) {
 		case TAIL_MAX:
-			printf("MAX        %s", PRINT_SEC_SPLIT);
+			printf("MAX           %s", PRINT_SEC_SPLIT);
 			break;
 		case TAIL_MEAN:
-			printf("MEAN       %s", PRINT_SEC_SPLIT);
+			printf("MEAN          %s", PRINT_SEC_SPLIT);
 			break;
 		case TAIL_MIN:
-			printf("MIN        %s", PRINT_SEC_SPLIT);
+			printf("MIN           %s", PRINT_SEC_SPLIT);
 			break;
 		default:
 			return;
@@ -433,9 +484,9 @@ void print_tail(int tail_type)
  */
 FILE *init_running_print()
 {
-	int	i=0;
+	int	i=0,k=0;
 	FILE	*fp,*fptmp;
-	char	line[LEN_4096] = {0};
+	char	line[LEN_10240] = {0};
 	char	filename[LEN_128] = {0};
 
 	/* will print tail*/
@@ -443,13 +494,13 @@ FILE *init_running_print()
 
 	fp = fopen(conf.output_file_path, "r");
 	if (!fp){
-		do_debug(LOG_FATAL, "unable to open the log file\n");
+		do_debug(LOG_FATAL, "unable to open the log file %s\n",conf.output_file_path);
 	}
 	/*log number to use for print*/
 	conf.print_file_number = -1;
 	/* find start offset will print from tsar.data */
-	find_offset_from_start(fp,i);
-	if(conf.print_file_number != 0){
+	k=find_offset_from_start(fp,i);
+	if(k==1){
 		/*find all possible record*/
 		for(i=1;;i++){
 			memset(filename,0,sizeof(filename));
@@ -459,22 +510,34 @@ FILE *init_running_print()
 				conf.print_file_number = i - 1;
 				break;
 			}
-			find_offset_from_start(fptmp,i);
-			fclose(fp);
-			fp=fptmp;
-			/*find start record for last ndays*/
-			if(conf.print_file_number == i){
+
+			k=find_offset_from_start(fptmp,i);
+			if(k==0 || k==4){
+				fclose(fp);
+				fp=fptmp;
 				break;
 			}
-			else{
-				conf.print_file_number = i;
+			if(k==2){
+				fseek(fp,0,SEEK_SET);
+				fclose(fptmp);
+				break;
+			}
+			if(k==1){
+				fclose(fp);
+				fp=fptmp;
 				continue;
+			}
+			if(k==5 || k==6){
+				do_debug(LOG_FATAL, "log format error or find_offset_from_start have a bug. error code=%d\n",k);
 			}
 		}
 	}
 
+	if(k==5 || k==6){
+		do_debug(LOG_FATAL, "log format error or find_offset_from_start have a bug. error code=%d\n",k);
+	}
 	/* get record */
-	if (!fgets(line, LEN_4096, fp)) {
+	if (!fgets(line, LEN_10240, fp)) {
 		do_debug(LOG_FATAL, "can't get enough log info\n");
 	}
 
@@ -487,8 +550,7 @@ FILE *init_running_print()
 	/* set struct module fields */	
 	init_module_fields();
 
-	if(set_record_time(line) == 0)
-		do_debug(LOG_WARN, "line have same time.%s\n",line);
+	set_record_time(line);
 	return fp;
 }
 
@@ -498,7 +560,7 @@ FILE *init_running_print()
  */
 void running_print()
 {
-	char	line[LEN_4096] = {0};
+	char	line[LEN_10240] = {0};
 	char	filename[LEN_128] = {0};
 	int	print_num = 1, re_p_hdr = 0;
 	long	n_record = 0, s_time;
@@ -507,10 +569,10 @@ void running_print()
 	fp = init_running_print();
 
 	/* skip first record */
-	if(collect_record_stat() ==0)
-		do_debug(LOG_INFO, "collect_record_stat warn\n");
+	collect_record_stat();
+
 	while (1) {
-		if(!fgets(line, LEN_4096, fp)){
+		if(!fgets(line, LEN_10240, fp)){
 			if(conf.print_file_number <= 0)
 				break;
 			else{
@@ -528,8 +590,13 @@ void running_print()
 				continue;
 			}
 		}
-		if(check_time(line)){
+
+		int k =check_time(line);
+		if(k == 1){
 			continue;
+		}
+		if(k == 3){
+			break;
 		}
 
 		/* collect data then set mod->summary */
@@ -568,4 +635,31 @@ void running_print()
 
 	fclose(fp);
 	fp = NULL;
+}
+
+/*
+void printf_check_result(double result)
+{
+	if ( (1000 - result) > 0.1){
+		printf("%0.1f ",result);
+	} else if ( (1000 - result/1024) > 0.1) {
+		printf("%0.1f%s ", result/1024, "K");
+	} else if ((1000 - result/1024/1024) > 0.1) {
+		printf("%0.1f%s ", result/1024/1024, "M");
+	} else if ((1000 - result/1024/1024/1024) > 0.1) {
+		printf("%0.1f%s ", result/1024/1024/1024, "G");
+	} else if ((1000 - result/1024/1024/1024/1024) > 0.1) {
+		printf("%0.1f%s ", result/1024/1024/1024/1024, "T");
+	}
+}
+*/
+
+char* trim(char* src,int max_len){
+	int cur_len = 0;
+	char *index=src;
+	while(*index == ' ' && cur_len<max_len){
+		index++;
+		cur_len++;
+	}
+	return index;
 }

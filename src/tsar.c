@@ -34,6 +34,7 @@ void usage()
 			"    --list/-L		list enabled modules\n"
 			"    --live/-l		running print live mode, which module will print\n"
 			"    --ndays/-n		show the value for the past days (default: 1)\n"
+			"    --date/-d		show the value for the specify day(YYYYMMDD)\n"
 			"    --merge/-m		merge multiply item to one\n"
 			"    --help/-h		help\n");
 
@@ -59,6 +60,7 @@ struct option longopts[] = {
 	{ "list", no_argument, NULL, 'L' },
 	{ "live", no_argument, NULL, 'l' },
 	{ "ndays", required_argument, NULL, 'n' },
+	{ "date", required_argument, NULL, 'd' },
 	{ "merge", no_argument, NULL, 'm' },
 	{ "help", no_argument, NULL, 'h' },
 	{ 0, 0, 0, 0},
@@ -68,7 +70,7 @@ struct option longopts[] = {
 static void main_init(int argc, char **argv)
 {
 	int opt, oind = 0;
-	while ((opt = getopt_long(argc, argv, ":ci:Lln:mh", longopts, NULL)) != -1) {
+	while ((opt = getopt_long(argc, argv, ":ci:Lln:d:mh", longopts, NULL)) != -1) {
 		oind++;
 		switch (opt) {
 			case 'c':
@@ -85,7 +87,11 @@ static void main_init(int argc, char **argv)
 				conf.running_mode = RUN_PRINT_LIVE;
 				break;
 			case 'n':
-				conf.print_ndays = strtol(optarg,NULL,0);
+                            conf.print_ndays = atoi(optarg);
+                            oind++;
+                            break;
+			case 'd':
+                            conf.print_day = atoi(optarg);
 				oind++;
 				break;
 			case 'm':
@@ -178,6 +184,8 @@ int main(int argc, char **argv)
 	
 	statis.cur_time = time(NULL);
 	
+	conf.print_day = -1;
+
 	main_init(argc, argv);
 
 	/* 
