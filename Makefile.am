@@ -22,3 +22,8 @@ release-sign: release
 	sha1sum -b $(distdir).tar.bz2 >$(distdir).tar.bz2.sha1
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
 
+rpm: release
+	mkdir -p ~/rpmbuild/SPECS ~/rpmbuild/SOURCES ~/rpmbuild/BUILD ~/rpmbuild/RPMS
+	cp $(distdir).tar.bz2 ~/rpmbuild/SOURCES
+	cp rpm/tsar.spec ~/rpmbuild/SPECS
+	rpmbuild -bb ~/rpmbuild/SPECS/tsar.spec
