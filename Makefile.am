@@ -23,7 +23,11 @@ release-sign: release
 	gpg --armor --output $(distdir).tar.bz2.asc  --detach-sig $(distdir).tar.bz2
 
 rpm: release
-	mkdir -p ~/rpmbuild/SPECS ~/rpmbuild/SOURCES ~/rpmbuild/BUILD ~/rpmbuild/RPMS
-	cp $(distdir).tar.bz2 ~/rpmbuild/SOURCES
-	cp rpm/tsar.spec ~/rpmbuild/SPECS
-	rpmbuild -bb ~/rpmbuild/SPECS/tsar.spec
+	rpmbuild --version
+	echo %_topdir $(PWD)/rpmbuild > .rpmbuild
+	mkdir -p $(PWD)/rpmbuild/SPECS $(PWD)/rpmbuild/SOURCES $(PWD)/rpmbuild/BUILD $(PWD)/rpmbuild/RPMS
+	cp $(distdir).tar.bz2 $(PWD)/rpmbuild/SOURCES
+	cp rpm/tsar.spec $(PWD)/rpmbuild/SPECS
+	rpmbuild --macros=`rpmbuild --showrc | grep ^macrofiles | awk '{print $$NF":.rpmbuild"}'` -bb $(PWD)/rpmbuild/SPECS/tsar.spec
+	mv rpmbuild/RPMS/*/*.rpm .
+	rm -rf .rpmbuild rpmbuild
