@@ -84,13 +84,19 @@ static void set_cpu_record(struct module *mod, double st_array[],
 		pre_total += pre_array[i];
 		cur_total += cur_array[i];
 	}
+
+	/* no tick changes, or tick overflows */
+	if (cur_total <= pre_total)
+		return;
 	/* set st record */
-	for (i = 0; i <= 4; i++) {
-		if(cur_array[i] >= pre_array[i])
+	for (i = 0; i < 9; i++) {
+		/* st_array[5] is util, calculate it late */
+		if((i != 5) && (cur_array[i] >= pre_array[i]))
 			st_array[i] = (cur_array[i] - pre_array[i]) * 100.0 / (cur_total - pre_total);
 	}
-	if(cur_array[5] >= pre_array[5])
-		st_array[5] = 100.0 - (cur_array[5] - pre_array[5]) * 100.0 / (cur_total - pre_total);
+
+	/* util = user + sys + hirq + sirq + nice */
+	st_array[5] = st_array[0] + st_array[1] + st_array[3] + st_array[4] + st_array[6];
 }
 
 
