@@ -5,6 +5,7 @@ conf_DATA= nagios.conf tsar.conf
 confddir=/etc/tsar/conf.d
 confd_DATA=
 rotatedir=/etc/logrotate.d
+mandir=${datadir}/man
 
 rotate_DATA=tsar.logrotate
 
