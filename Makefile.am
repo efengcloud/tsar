@@ -24,10 +24,14 @@ release-sign: release
 
 rpm: release
 	rpmbuild --version
-	echo %_topdir $(PWD)/rpmbuild > .rpmbuild
 	mkdir -p $(PWD)/rpmbuild/SPECS $(PWD)/rpmbuild/SOURCES $(PWD)/rpmbuild/BUILD $(PWD)/rpmbuild/RPMS
 	cp $(distdir).tar.bz2 $(PWD)/rpmbuild/SOURCES
 	cp rpm/tsar.spec $(PWD)/rpmbuild/SPECS
-	rpmbuild --macros=`rpmbuild --showrc | grep ^macrofiles | awk '{print $$NF":.rpmbuild"}'` -bb $(PWD)/rpmbuild/SPECS/tsar.spec
-	mv rpmbuild/RPMS/*/*.rpm .
-	rm -rf .rpmbuild rpmbuild
+	test -e ~/.rpmmacros && mv .rpmmacros.bak || true
+	echo %_topdir $(PWD)/rpmbuild > ~/.rpmmacros
+	rpmbuild -bb $(PWD)/rpmbuild/SPECS/tsar.spec
+	rm -f ~/.rpmmacros
+	test -e .rpmmacros.bak && mv .rpmmacros.bak ~/.rpmmacros || true
+	mv -f rpmbuild/RPMS/*/*.rpm .
+	rm -rf rpmbuild
+
