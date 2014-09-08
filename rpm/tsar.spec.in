@@ -1,12 +1,13 @@
 Name: tsar
-Version: _VERSION_
-Release: _RELEASE_
+Version: @VERSION@
+Release: %(echo ${RELEASE:-0})
 Summary: Taobao System Activity Reporter
-URL: http://svn.simba.taobao.com/svn/cdn/trunk/tsar/Revision_SVN_REVISION
+URL: http://code.taobao.org/svn/tsar/trunk
 Group: Taobao/Common
-License: Commercial
+License: Apache License, Version 2.0
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Source: tsar-%{version}.tar.gz
+Source: tsar-%{version}.tar.bz2
+#Requires: t-nsca-send
 
 %description
 tsar is Taobao monitor tool for collect system activity status, and report it.
@@ -16,6 +17,7 @@ setup different output target such as local logfile and remote nagios host.
 %package devel
 Summary: Taobao Tsar Devel
 Group: Taobao/Common
+Requires:tsar
 %description devel
 devel package include tsar header files and module template for the development
 
@@ -23,33 +25,15 @@ devel package include tsar header files and module template for the development
 %setup -q
 
 %build
-make clean;make
+autoreconf -i
+./configure --prefix=/usr --libdir=%{_libdir}/tsar;make
 
 %install
 
 rm -rf %{buildroot}
-mkdir -p %{buildroot}/usr/local/tsar/
-mkdir -p %{buildroot}/usr/local/tsar/modules/
-mkdir -p %{buildroot}/usr/local/tsar/conf/
-mkdir -p %{buildroot}/usr/local/tsar/devel/
-mkdir -p %{buildroot}/usr/local/man/man8/
-mkdir -p %{buildroot}/etc/logrotate.d/
-mkdir -p %{buildroot}/etc/tsar/
-mkdir -p %{buildroot}/etc/cron.d/
-mkdir -p %{buildroot}/usr/bin
+mkdir -p %{buildroot}
+make install DESTDIR=%{buildroot}
 
-install -p -D -m 0755 src/tsar  %{buildroot}/usr/bin/tsar
-install -p -D -m 0644 conf/tsar.conf %{buildroot}/etc/tsar/tsar.conf
-install -p -D -m 0644 modules/*.so %{buildroot}/usr/local/tsar/modules/
-install -p -D -m 0644 conf/tsar.cron %{buildroot}/etc/cron.d/tsar
-install -p -D -m 0644 conf/tsar.logrotate %{buildroot}/etc/logrotate.d/tsar
-install -p -D -m 0644 conf/tsar.8 %{buildroot}/usr/local/man/man8/tsar.8
-
-install -p -D -m 0755 devel/tsardevel %{buildroot}/usr/bin/tsardevel
-install -p -D -m 0644 devel/mod_test.c %{buildroot}/usr/local/tsar/devel/mod_test.c
-install -p -D -m 0644 devel/mod_test.conf %{buildroot}/usr/local/tsar/devel/mod_test.conf
-install -p -D -m 0644 devel/Makefile.test %{buildroot}/usr/local/tsar/devel/Makefile.test
-install -p -D -m 0644 devel/tsar.h %{buildroot}/usr/local/tsar/devel/tsar.h
 
 %clean
 [ "%{buildroot}" != "/" ] && %{__rm} -rf %{buildroot}
@@ -57,25 +41,29 @@ install -p -D -m 0644 devel/tsar.h %{buildroot}/usr/local/tsar/devel/tsar.h
 
 %files
 %defattr(-,root,root)
-/usr/local/tsar/modules/*.so
+%config(noreplace) /etc/tsar/tsar.conf
+%config(noreplace) /etc/tsar/nagios.conf
+%{_libdir}/tsar/*.so
+/etc/cron.d/tsar.cron
+/etc/tsar/conf.d
+/etc/logrotate.d/tsar.logrotate
+/usr/share/man/man8/*
 
 %attr(755,root,root) %dir /usr/bin/tsar
-%config(noreplace) /etc/tsar/tsar.conf
-%attr(644,root,root) %dir /etc/cron.d/tsar
-%attr(644,root,root) %dir /etc/logrotate.d/tsar
-%attr(644,root,root) %dir /usr/local/man/man8/tsar.8
 
 %files devel
 %defattr(-,root,root)
-/usr/local/tsar/devel/tsar.h
-/usr/local/tsar/devel/Makefile.test
-/usr/local/tsar/devel/mod_test.c
-/usr/local/tsar/devel/mod_test.conf
+/usr/share/doc/tsar/tsar.h
+/usr/share/doc/tsar/Makefile.test
+/usr/share/doc/tsar/mod_test.c
+/usr/share/doc/tsar/mod_test.conf
 %attr(755,root,root) %dir /usr/bin/tsardevel
 
 %changelog
-* Wed Jan  6 2013 Ke Li <kongjian@taobao.com>
-- merge inner and opensource tsar
+* Wed May 11 2011 Ke Li <kongjian@taobao.com>
+- add devel for module develop
+* Thu Mar 22 2011 Ke Li <kongjian@taobao.com>
+- add nagios conf and include conf support
 * Thu Dec  9 2010 Ke Li <kongjian@taobao.com>
 - add logrotate for tsar.data
 * Tue Apr 26 2010 Bin Chen <kuotai@taobao.com>

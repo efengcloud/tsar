@@ -55,7 +55,7 @@ load_modules()
     int    (*mod_register) (struct module *);
 
     /* get the full path of modules */
-    sprintf(buff, "/usr/local/tsar/modules");
+    sprintf(buff, DEFAULT_MODULE_FILE_PATH);
 
     for (i = 0; i < statis.total_mod_num; i++) {
         mod = &mods[i];
