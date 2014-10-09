@@ -105,7 +105,7 @@ done:
     if (-1 != fd) {
         close(fd);
     }
-    pos = sprintf(buf, "%lld,%lld,%lld,%lld,%lld,%lld,0",
+    pos = sprintf(buf, "%lld,%lld,%lld,%lld,%lld,%lld,%lld",
             st_ts.hit,
             st_ts.ram_hit,
             st_ts.band,
