@@ -2,9 +2,10 @@ Name: tsar
 Version: @VERSION@
 Release: %(echo ${RELEASE:-0})
 Summary: Taobao System Activity Reporter
-URL: http://code.taobao.org/svn/tsar/trunk
-Group: Taobao/Common
+URL: https://github.com/efengcloud/tsar
+Group: Applications/System
 License: Apache License, Version 2.0
+Vendor: efengcloud
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 Source: tsar-%{version}.tar.bz2
 #Requires: t-nsca-send
